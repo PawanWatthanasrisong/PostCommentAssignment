@@ -75,7 +75,7 @@ postRouter.get('/user/:userId', async (req, res, next) => {
 postRouter.post('/', definePostId, definePostContent, defineUserId, async (req, res, next) => {
     try {
         const newPost = {
-            userId: req.postUserId
+            userId: req.postUserId,
             id: req.postId,
             content: req.postContent
         };
