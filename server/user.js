@@ -32,9 +32,12 @@ userRouter.post('/', defineUserId, defineUsername, async(req, res, next) => {
         };
         await query(`   INSERT INTO users
                         VALUES($1,$2);`,[req.userId, req.username]);
+        res.setHeader.coo
         res.status(201).send(newUser);
     } catch(err) {
         console.log(`Error: ${err}`);
         res.status(400).send(`Failed to create new user.`);
     }
 });
+
+module.exports = userRouter;
