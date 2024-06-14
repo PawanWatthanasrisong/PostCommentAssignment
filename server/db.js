@@ -77,7 +77,7 @@ const deletePost = async (postId) => {
 //Get comment from post id 
 const getCommentByPostId = async(postId) => {
     try {
-        const commentData = await query(`   SELECT comment.id, comment.post_id, commentContent 
+        const commentData = await query(`   SELECT comment.id, comment.post_id, commentcontent 
                                             FROM comment
                                             INNER JOIN post
                                             ON  post.id = comment.post_id
@@ -110,8 +110,44 @@ const deleteComment = async(commentId) => {
         console.log(err);
         return false;
     }
-}
+};
 
+const updateComment = async(commentId, commentContent) => {
+    try {
+        const result = await query(`   UPDATE comment
+                        SET commentcontent = $1
+                        WHERE id = $2`,[commentContent, commentId]);
+        if (result !== undefined){
+            return true;
+        } else {
+            return false;
+        }
+        
+    } catch(err) {
+        console.log(err);
+        return false;
+    }
+};
+
+const checkCommentByUserId = async(userId, commentId) => {
+    try {
+        const commentData = await query(`   SELECT comment.id, comment.post_id, commentcontent 
+                                            FROM comment
+                                            INNER JOIN users
+                                            ON  users.id = comment.user_id
+                                            WHERE users.id = $1
+                                            AND comment.id = $2;`,[userId, commentId]);
+        if (commentData.rowCount !== 0) {
+            return true;
+        } else {
+            return false;
+        };
+    } 
+    catch(err) {
+        console.log(`Error: ${err}`);
+        return false;
+    }
+}
 
 //export
 module.exports = {  query, 
@@ -122,4 +158,6 @@ module.exports = {  query,
                     deletePost, 
                     getCommentByPostId,
                     createComment,
-                    deleteComment};
+                    deleteComment,
+                    updateComment,
+                    checkCommentByUserId};

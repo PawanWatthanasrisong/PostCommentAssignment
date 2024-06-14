@@ -86,7 +86,7 @@ postRouter.post('/', validatePostCreate, async (req, res, next) => {
     if (result) {
         res.status(201).send(req.newPost);
     } else {
-        res.status(400).send('Create Post Failed');
+        res.status(500).send('Create Post Failed');
     }
 });
 
@@ -96,7 +96,7 @@ postRouter.put('/:postId', validatePostUpdate, async(req, res, next) => {
     if (result) {
         res.status(200).send(req.updatedPost);
     } else {
-        res.status(400).send('Update Post Failed');
+        res.status(500).send('Update Post Failed');
     }
 });
 
@@ -107,7 +107,7 @@ postRouter.delete('/:postId', async(req,res,next) => {
     if (result) {
         res.status(200).send(getAllOrderById(type));
     } else {
-        res.status(400).send('Delete Post Failed');
+        res.status(500).send('Delete Post Failed');
     }
 });
 

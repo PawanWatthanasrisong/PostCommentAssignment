@@ -5,7 +5,9 @@ const { query,
         getCommentByPostId, 
         getAllOrderById,
         createComment,
-        deleteComment} = require('./db.js');
+        deleteComment,
+        updateComment,
+        checkCommentByUserId} = require('./db.js');
 
 commentRouter.param('postId', async(req, res, next, id) => {
     const type = 'post';
@@ -45,6 +47,27 @@ const validateCommentCreate = (req, res, next) => {
         res.status(400).send('Invalid Input');
     }
 }
+
+const validateCommentUpdate = async (req, res, next) => {
+    if (req.body.content && req.body.userId) {
+        if(await checkCommentByUserId(req.body.userId, req.commentId)){
+            req.commentContent  = req.body.content;
+            req.commentUserId = req.body.userId;
+            req.updateComment = {
+                id: req.commentId,
+                post_id: req.postId,
+                commentcontent: req.commentContent,
+                user_id: req.commentUserId
+            };
+            next();
+        } else {
+            res.status(400).send('Invalid User and Comment');
+        }
+    } else {
+        res.status(400).send('Invalid Input');
+    }
+}
+
 
 const defineUserId = (req, res, next) => {
     if (req.body.userId) {
@@ -97,7 +120,7 @@ commentRouter.post('/:postId', validateCommentCreate, async (req, res, next) => 
     if (result) {
         res.status(201).send(req.newComment);
     } else {
-        res.status(400).send('Create Comment Failed');
+        res.status(500).send('Create Comment Failed');
     }
 });
 
@@ -108,25 +131,18 @@ commentRouter.delete('/:postId/:commentId', async(req, res, next) => {
         const remainingComment = await getCommentByPostId(req.postId);
         res.status(200).send(remainingComment.rows);
     } else {
-        res.status(400).send('Delete Commment Failed');
+        res.status(500).send('Delete Commment Failed');
     }
 });
 
 //Edit Comment
-commentRouter.put('/:postId/:commentId', async(req, res, next) => {
-    try {
-        const newComment = {
-            id: req.commentId,
-            post_id: req.postId,
-            commentContent: req.commentContent
-        }
-        await query(`   UPDATE comment
-                        SET comment.commentContent = $1
-                        WHERE comment.id = $2`,[req.commentContent], [req.commentId]);
-        res.status(200).send(newComment);
-    } catch(err) {
-        res.status(400).send(`Failed to update`);
+commentRouter.put('/:postId/:commentId', validateCommentUpdate, async(req, res, next) => {
+    const result = await updateComment(req.commentId, req.commentContent);
+    if (result) {
+        res.status(200).send(req.updateComment);
+    } else {
+        res.status(500).send('Edit Comment Failed');
     }
-})
+});
 
 module.exports = commentRouter;
