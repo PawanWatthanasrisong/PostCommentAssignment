@@ -27,12 +27,13 @@ const getAllOrderById = (type) => {
     }
 }
 
+//Get by id 
 const findById = (type, id) => {
     const result = query(`SELECT * FROM ${type} WHERE id = ${id}`);
     if (result.rowCount !== 0){
         return result;
     } else {
-        throw new Error("ID not found")
+        throw new Error("ID not found");
     };
 };
 
@@ -72,5 +73,53 @@ const deletePost = async (postId) => {
         return false;
     }
 }
+
+//Get comment from post id 
+const getCommentByPostId = async(postId) => {
+    try {
+        const commentData = await query(`   SELECT comment.id, comment.post_id, commentContent 
+                                            FROM comment
+                                            INNER JOIN post
+                                            ON  post.id = comment.post_id
+                                            WHERE post.id = $1;`,[postId]);
+        return commentData;
+    } 
+    catch(err) {
+        console.log(err);
+        return false;
+    }
+};
+
+const createComment = async(commentId, postId, commentContent, userId) => {
+    try {
+        await query (`  INSERT INTO comment(id, post_id, commentcontent, user_id)
+                        VALUES ($1,$2,$3,$4);`,[commentId, postId, commentContent, userId]);
+        return true;
+    } catch(err) {
+        console.log(err);
+        return false;
+    }
+}
+
+const deleteComment = async(commentId) => {
+    try {
+        await query(`   DELETE FROM comment
+                        WHERE comment.id = $1;`, [commentId]);
+        return true;
+    } catch(err) {
+        console.log(err);
+        return false;
+    }
+}
+
+
 //export
-module.exports = {query, findById, getAllOrderById, createPost, updatePost, deletePost};
+module.exports = {  query, 
+                    findById, 
+                    getAllOrderById, 
+                    createPost, 
+                    updatePost, 
+                    deletePost, 
+                    getCommentByPostId,
+                    createComment,
+                    deleteComment};

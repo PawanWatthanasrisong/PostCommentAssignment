@@ -1,26 +1,50 @@
 const express = require('express');
 const commentRouter = express.Router();
-const {query} = require('./db.js');
+const { query, 
+        findById, 
+        getCommentByPostId, 
+        getAllOrderById,
+        createComment,
+        deleteComment} = require('./db.js');
 
 commentRouter.param('postId', async(req, res, next, id) => {
-    const postId = await query (`SELECT id FROM post WHERE id = $1;`,[id]);
-    if (postId.rowCount !== 0){
+    const type = 'post';
+    const postId = await findById(type, id);
+    if (postId.rowCount){
         req.postId = id;
         next();
     } else {
-        res.status(404).send('Post Not Found');
+        res.status(404).send('Post ID Not Found');
     }
 })
 
 commentRouter.param('commentId', async(req, res, next, id) => {
-    const commentId = await query (`SELECT id FROM comment WHERE id = $1;`, [id]);
-    if (commentId.rowCount !== 0){
+    const type = 'comment';
+    const commentId = await findById(type, id);
+    if (commentId.rowCount){
         req.commentId = id;
         next();
     } else {
-        res.status(404).send('Comment Not Found');
+        res.status(404).send('Comment ID Not Found');
     }
 })
+
+const validateCommentCreate = (req, res, next) => {
+    if (req.body.id && req.body.content && req.body.userId) {
+        req.commentId = req.body.id;
+        req.commentContent = req.body.content;
+        req.commentUserId = req.body.userId;
+        req.newComment = {
+            id: req.commentId,
+            post_id: req.postId,
+            commentcontent: req.commentContent,
+            user_id: req.commentUserId
+        };
+        next();
+    } else {
+        res.status(400).send('Invalid Input');
+    }
+}
 
 const defineUserId = (req, res, next) => {
     if (req.body.userId) {
@@ -49,37 +73,42 @@ const defineCommentContent  = (req, res, next) => {
     }
 }
 
+//GET ALL comment
+commentRouter.get('/', async (req,res,next) => {
+    const type = 'comment'
+    const result = await getAllOrderById(type);
+    res.status(200).send(result.rows);
+})
+
 //GET comment FROM post
 commentRouter.get('/:postId', async (req, res, next) => {
     console.log(req.postId);
-    const commentData = await query(`   SELECT comment.id, comment.post_id, commentContent 
-                                        FROM comment
-                                        INNER JOIN post
-                                        ON  post.id = comment.post_id
-                                        WHERE post.id = $1;`,[req.postId]);
-    res.status(200).send(commentData.rows);
+    const result =  await getCommentByPostId(req.postId);
+    if (result.rowCount === 0) {
+        res.status(200).send('No Comment Yet');
+    } else {
+        res.status(200).send(result.rows);
+    }
 });
 
-//Post Comment 
-commentRouter.post('/:postId', defineCommentId, defineCommentContent, async (req, res, next) => {
-    console.log(req.postId);
-    try {
-        await query (`  INSERT INTO comment
-                        VALUES ($1,$2,$3);`,[req.commmentId, req.postId, req.commentContent]);
-        res.status(200).send();
-    } catch(err) {
-        res.status(400).send('Failed to comment');
+//Create Comment in Post Id 
+commentRouter.post('/:postId', validateCommentCreate, async (req, res, next) => {
+    const result = await createComment(req.commentId, req.postId, req.commentContent, req.commentUserId);
+    if (result) {
+        res.status(201).send(req.newComment);
+    } else {
+        res.status(400).send('Create Comment Failed');
     }
 });
 
 //Delete Comment
 commentRouter.delete('/:postId/:commentId', async(req, res, next) => {
-    try {
-        await query(`   DELETE FROM comment
-                        WHERE comment.id = $1;`, [req.commentId]);
-        res.status(200).send();
-    } catch(err) {
-        res.status(400).send(`Failed to delete`);
+    const result = await deleteComment(req.commentId);
+    if (result) {
+        const remainingComment = await getCommentByPostId(req.postId);
+        res.status(200).send(remainingComment.rows);
+    } else {
+        res.status(400).send('Delete Commment Failed');
     }
 });
 
