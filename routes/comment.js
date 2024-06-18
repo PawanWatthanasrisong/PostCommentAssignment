@@ -1,13 +1,13 @@
 const express = require('express');
 const commentRouter = express.Router();
-const { query, 
-        findById, 
+const { findById, 
         getCommentByPostId, 
         getAllOrderById,
         createComment,
         deleteComment,
         updateComment,
-        checkCommentByUserId} = require('./db.js');
+        checkCommentByUserId,
+        getNewId} = require('../helpers/helpers.js');
 
 commentRouter.param('postId', async(req, res, next, id) => {
     const type = 'post';
@@ -31,9 +31,12 @@ commentRouter.param('commentId', async(req, res, next, id) => {
     }
 })
 
-const validateCommentCreate = (req, res, next) => {
-    if (req.body.id && req.body.content && req.body.userId) {
-        req.commentId = req.body.id;
+
+//Validate Create Comment
+const validateCommentCreate = async (req, res, next) => {
+    if (req.body.content && req.body.userId) {
+        const type = 'comment';
+        req.commentId = await getNewId(type);
         req.commentContent = req.body.content;
         req.commentUserId = req.body.userId;
         req.newComment = {
@@ -68,33 +71,6 @@ const validateCommentUpdate = async (req, res, next) => {
     }
 }
 
-
-const defineUserId = (req, res, next) => {
-    if (req.body.userId) {
-        req.commentUserId = req.body.userId;
-        next();
-    } else {
-        res.status(400).json({ message: 'Invalid UserId Input'});
-    }
-};
-
-const defineCommentId = (req, res, next) => {
-    if (req.body.id){
-        req.commmentId = req.body.id;
-        next();
-    } else {
-        res.status(400).send('Invalid ID input');
-    }
-}
-
-const defineCommentContent  = (req, res, next) => {
-    if (req.body.content){
-        req.commentContent = req.body.content;
-        next();
-    } else {
-        res.status(400).send('Invalid Content Input');
-    }
-}
 
 //GET ALL comment
 commentRouter.get('/', async (req,res,next) => {

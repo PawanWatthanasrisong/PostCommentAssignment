@@ -1,20 +1,24 @@
-const express = require('express');
-const pg = require('pg');
-const { Pool } = pg;
+const {query} = require('../data/db.js');
 
-//connet to database
-const pool = new Pool({
-    user: 'postgres',
-    password: 'postgres',
-    host: 'localhost',
-    port: 5432,
-    database: 'PostCommentProject'
-});
+//Create new ID
+const getNewId = async (type) => {
+    try{
+        const result = await query(`SELECT max(id) FROM ${type}`);
+        const idAmount= result.rows[0].max;
+        if (idAmount !== 0) {
+            const newId = idAmount + 1;
+            return newId;
+        } else if (idAmount == 0) {
+            return 1;
+        } else {
+            throw new Error("New Id Failed");
+        }
+    } catch(err){
+        console.log(err);
+    }
+    
+};
 
-//query fucntion
-const query = (text, params, callback) => {
-    return pool.query(text,params, callback);
-}
 
 //Select all from tables
 const getAllOrderById = (type) => {
@@ -77,7 +81,7 @@ const deletePost = async (postId) => {
 //Get comment from post id 
 const getCommentByPostId = async(postId) => {
     try {
-        const commentData = await query(`   SELECT comment.id, comment.post_id, commentcontent 
+        const commentData = await query(`   SELECT comment.id, comment.post_id, commentcontent, comment.user_id 
                                             FROM comment
                                             INNER JOIN post
                                             ON  post.id = comment.post_id
@@ -149,8 +153,9 @@ const checkCommentByUserId = async(userId, commentId) => {
     }
 }
 
+
 //export
-module.exports = {  query, 
+module.exports = {  getNewId,
                     findById, 
                     getAllOrderById, 
                     createPost, 

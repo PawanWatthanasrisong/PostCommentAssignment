@@ -1,11 +1,11 @@
 const express = require('express');
 const postRouter = express.Router();
-const { query, 
-        findById, 
+const { findById, 
         getAllOrderById, 
         createPost, 
         updatePost, 
-        deletePost} = require('./db.js');
+        deletePost,
+        getNewId } = require('../helpers/helpers.js');
 
 //Function for Update Post
 const validatePostUpdate = (req,res,next) => {
@@ -23,10 +23,11 @@ const validatePostUpdate = (req,res,next) => {
 }
 
 //Function for Create Post
-const validatePostCreate = (req, res, next) => {
-    if (req.body.userId && req.body.id && req.body.content) {
+const validatePostCreate = async (req, res, next) => {
+    if (req.body.userId && req.body.content) {
+        const type = 'post';
         req.postUserId = req.body.userId;
-        req.postId = req.body.id;
+        req.postId = await getNewId(type);
         req.postContent = req.body.content;
         req.newPost = {
             userId: req.postUserId,
