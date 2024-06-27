@@ -22,7 +22,6 @@ const getNewId = async (type) => {
 
 //Select all from tables
 const getAllOrderById = (type) => {
-    console.log(type);
     const result = query(`SELECT * FROM ${type} ORDER BY id`);
     if (result.rowCount !== 0){
         return result;

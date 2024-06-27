@@ -16,6 +16,5 @@ const query = (text, params, callback) => {
     return pool.query(text,params, callback);
 }
 
-
 //export
 module.exports = {query};

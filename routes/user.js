@@ -6,29 +6,28 @@ const LocalStrategy = require("passport-local").Strategy;
 const {getNewId} = require('../helpers/helpers.js');
 const {userExists, userCreate} = require('../helpers/userHelper.js');
 
-// function ensureAuthentication(req, res, next) {
-//     if (req.session.authenticaed) {
-//         return next();
-//     } else {
-//         res.status(403).json({ msg: "You're not authorized to view this page"});
-//     }
-// }
+const ensureAuthentication = (req, res, next) => {
+    if (req.isAuthenticated()){
+        return next();
+    } else {
+        res.redirect('/api/user/login');
+    }
+};
 
 //Function
 
-const defineUserPassword = (req, res, next) => {
-    const { username, password } = req.body;
-    if (username && password) {
+const defineRegister = (req, res, next) => {
+    const { username, password, password2 } = req.body;
+    if (username && password && password2) {
         next();
     } else {
         res.status(400).json({ message: 'Invalid Username or Password Input'});
     }
 }
 
-//register
-userRouter.post('/register', defineUserPassword, async (req, res) => {
+//Register
+userRouter.post('/register', defineRegister, async (req, res) => {
     const type = 'users';
-    const { username, password} = req.body;
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const id = await getNewId(type);
@@ -54,6 +53,7 @@ userRouter.post('/register', defineUserPassword, async (req, res) => {
     }
 });
 
+
 // //login
 // userRouter.post('/login', (req, res) => {
 //     const {username, passwordd} = req.body;
@@ -73,21 +73,40 @@ userRouter.post('/register', defineUserPassword, async (req, res) => {
 // } );
 
 //Another way
-userRouter.post('/login', (req, res) => {
-    passport.authenticate("local", { failureRedirect: "/login", failureMessage: true }),
-    function(req, res) {
-        res.send("login successful");
-    }
+userRouter.post('/login', (req, res, next) => {
+    console.log('Hello');
+    passport.authenticate('local', { 
+            failureRedirect: '/api/user/login', 
+            failureMessage: true,
+            failureFlash: true,
+            successRedirect: '/api/dashboard',
+            successMessage: true
+        })(req, res, next);
+    console.log('Here');
 });
 
 //log out user
 userRouter.post('/logout', (req, res) => {
-    req.logout();
-    res.redirect("../");
-})
+    req.logout(function(err) {
+        if (err) { return next(err); }
+    console.log(`Logout!`);
+    res.redirect("/api/user/login");
+    });
+});
 
 userRouter.get('/login', (req,res)=> {
-    res.send("here's login page");
+    if (req.isAuthenticated()){
+        req.logout(function(err) {
+            if (err) { return next(err); }
+        })
+        console.log(`Logout!`);
+    }
+    res.render('login');
+})
+
+userRouter.get('/register', (req,res) => {
+
+    res.render('register');
 })
 
 module.exports = userRouter;

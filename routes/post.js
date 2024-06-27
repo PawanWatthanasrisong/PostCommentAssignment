@@ -40,6 +40,15 @@ const validatePostCreate = async (req, res, next) => {
     }
 };
 
+//Authentication check middleware
+const ensureAuthentication = (req, res, next) => {
+    if (req.isAuthenticated()){
+        return next();
+    } else {
+        res.redirect('/login');
+    }
+};
+
 postRouter.param('postId', async (req, res, next, id) => {
     req.type = 'post';
     const postId = await findById(req.type, id);
@@ -63,7 +72,7 @@ postRouter.param('userId', async (req, res, next, id) => {
 });
 
 //GET All Function
-postRouter.get('/', async (req, res, next) => {
+postRouter.get('/', ensureAuthentication, async (req, res, next) => {
     const type = 'post';
     const postData = await getAllOrderById(type);
     res.json(postData.rows);
